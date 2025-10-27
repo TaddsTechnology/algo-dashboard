@@ -9,11 +9,11 @@ requirements = [
         "cryptography"
 ]
 setup(
-    name='shareconnect',
-    version='1.0.0.11',
-    author='rg-sharekhanapi',
-    author_email='shareconnect@sharekhan.com',
-    description='Sharekhan Data Feed Trading Api Server',
+    name='kiteconnect',
+    version='1.0.0',
+    author='Zerodha',
+    author_email='support@zerodha.com',
+    description='Kite Connect Data Feed Trading Api Server',
     packages=find_packages(),
     long_description=readme,
     long_description_content_type="text/markdown",

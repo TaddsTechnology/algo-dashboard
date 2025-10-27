@@ -44,7 +44,7 @@ METHOD 2: COMMAND LINE (FOR DEVELOPERS)
    python token_manager.py
 
 2. Run the near future fetcher directly:
-   python near_future_fetcher.py
+   python kite_near_future.py
    (This will ask for access token - get it from step 1 output)
 
 ================================================================================
@@ -55,15 +55,14 @@ METHOD 2: COMMAND LINE (FOR DEVELOPERS)
 ├── config.py                    - Your API credentials (already configured)
 ├── website_app.py               - Flask web application
 ├── token_manager.py             - Automatic token management
-├── near_future_fetcher.py       - Core futures data fetcher
+├── kite_near_future.py         - Core futures data fetcher
 ├── requirements.txt             - Python dependencies
 └── SETUP_AND_RUN_GUIDE.txt     - This guide
 
 📁 API Files:
-├── SharekhanApi/
-│   ├── sharekhanConnect.py      - Main API connection
-│   ├── sharekhanWebsocket.py    - WebSocket for live data
-│   └── automated_auth.py        - Authentication system
+├── KiteApi/
+│   ├── kiteConnect.py           - Main API connection
+│   └── convert_token.py         - Authentication system
 
 📁 Debug Files (for troubleshooting):
 ├── debug_*.py                   - Various debug scripts
@@ -99,8 +98,8 @@ For Command Line:
    → If it does, run: python debug_all_fs_instruments.py
 
 ❌ "Failed to get valid access token" 
-   → Check your config.py has correct credentials
-   → Run: python SharekhanApi/automated_auth.py manually
+   → Check your kite_config.py has correct credentials
+   → Run: python KiteApi/convert_token.py manually
 
 ❌ "Module not found" errors
    → Install dependencies: pip install -r requirements.txt
@@ -110,7 +109,7 @@ For Command Line:
    → Try: python website_app.py --port 8080
 
 ❌ WebSocket connection issues
-   → This is normal - WebSocket format depends on Sharekhan's implementation
+   → This is normal - WebSocket format depends on Kite's implementation
    → The contract detection still works without WebSocket
 
 ================================================================================
@@ -118,20 +117,20 @@ For Command Line:
 ================================================================================
 
 🔧 Customize Days to Expiry:
-   Edit line in near_future_fetcher.py:
-   near_future.start_near_future_stream(days_to_expiry=30)  # Change 30 to desired days
+   Edit line in kite_near_future.py:
+   near_future.start_near_future_analysis(days_to_expiry=30)  # Change 30 to desired days
 
 🔧 Change Maximum Contracts:
-   Edit line in near_future_fetcher.py:
+   Edit line in kite_near_future.py:
    selected_contracts = contracts[:240]  # Change 240 to desired limit
 
 🔧 Different Exchange:
-   Edit line in near_future_fetcher.py:
-   contracts = self.get_near_expiry_futures(exchange="NF")  # NF, NC, BC, BF
+   Edit line in kite_near_future.py:
+   contracts = self.get_all_futures_by_category(exchange="NFO")  # NFO for Kite
 
 🔧 Manual Token Management:
-   If automatic doesn't work, run: python SharekhanApi/automated_auth.py
-   Copy the token and paste when prompted in near_future_fetcher.py
+   If automatic doesn't work, run: python KiteApi/convert_token.py
+   Copy the token and paste when prompted in kite_near_future.py
 
 ================================================================================
                                 SYSTEM STATUS
@@ -140,8 +139,8 @@ For Command Line:
 ✅ TOKEN MANAGEMENT: Working (automatic refresh every ~7 hours)
 ✅ CONTRACT DETECTION: Working (finds 209 contracts expiring 30/09/2025) 
 ✅ WEB INTERFACE: Working (Flask app with responsive design)
-✅ API CONNECTION: Working (connects to Sharekhan NF exchange)
-⚠️  WEBSOCKET STREAMING: Partial (depends on Sharekhan's exact format)
+✅ API CONNECTION: Working (connects to Kite NFO exchange)
+⚠️  WEBSOCKET STREAMING: Partial (depends on Kite's exact format)
 
 ================================================================================
                             DATA DETAILS

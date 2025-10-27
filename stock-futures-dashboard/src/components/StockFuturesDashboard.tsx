@@ -21,26 +21,19 @@ interface TableRow extends MarketData {
 
 export default function StockFuturesDashboard() {
   const [selectedExpiry, setSelectedExpiry] = useState<ExpiryType>('near');
-  const [threshold, setThreshold] = useState<number>(3.0);
+  const [threshold, setThreshold] = useState<number>(-1000);
   const [searchSymbol, setSearchSymbol] = useState<string>('');
-  const [marketMode, setMarketMode] = useState<'live' | 'mock' | 'volatile'>('live');
+  // Always use Sharekhan-backed live endpoint
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const lastQualifyingSymbolsRef = useRef<string[]>([]);
 
   // Fetch market data with 30s polling
   const { data: marketData = [], isLoading, error } = useQuery({
-    queryKey: ['market-data', marketMode],
+    queryKey: ['market-data', 'live-sharekhan'],
     queryFn: async (): Promise<MarketData[]> => {
-      // Select endpoint based on mode
-      let endpoint = '/api/market/live'; // Default to live Yahoo Finance API
-      if (marketMode === 'mock') {
-        endpoint = '/api/market'; // Original mock data
-      } else if (marketMode === 'volatile') {
-        endpoint = '/api/market/volatile'; // Volatile test data
-      }
-      
-      const response = await fetch(endpoint);
+      const endpoint = '/api/market/live';
+      const response = await fetch(endpoint, { cache: 'no-store' });
       if (!response.ok) {
         throw new Error(`Failed to fetch market data from ${endpoint}`);
       }
@@ -125,7 +118,7 @@ export default function StockFuturesDashboard() {
 
   // Handle Roll Expiry functionality
   const handleRollExpiry = () => {
-    queryClient.setQueryData(['market-data', marketMode], (oldData: MarketData[] | undefined) => {
+    queryClient.setQueryData(['market-data', 'live-sharekhan'], (oldData: MarketData[] | undefined) => {
       if (!oldData) return oldData;
 
       return oldData.map(stock => ({
@@ -203,39 +196,7 @@ export default function StockFuturesDashboard() {
             </div>
 
 
-            {/* Data Source Toggle */}
-            <div className="flex items-center space-x-2">
-              <Label className="text-sm font-medium">Data:</Label>
-              <div className="flex bg-gray-100 rounded-lg p-1">
-                <Button
-                  variant={marketMode === 'live' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setMarketMode('live')}
-                  className="px-2 py-1 text-xs"
-                  aria-label="Use live Yahoo Finance data"
-                >
-                  Live
-                </Button>
-                <Button
-                  variant={marketMode === 'mock' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setMarketMode('mock')}
-                  className="px-2 py-1 text-xs"
-                  aria-label="Use mock data for testing"
-                >
-                  Mock
-                </Button>
-                <Button
-                  variant={marketMode === 'volatile' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setMarketMode('volatile')}
-                  className="px-2 py-1 text-xs"
-                  aria-label="Use volatile test data"
-                >
-                  Test
-                </Button>
-              </div>
-            </div>
+            
 
             {/* Search Input */}
             <div className="flex items-center space-x-2">

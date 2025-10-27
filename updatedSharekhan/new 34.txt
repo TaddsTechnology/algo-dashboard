@@ -1,6 +1,6 @@
 python debug_fs_contracts.py
 ✅ Loaded API key from config.py
-Enter your Sharekhan Access Token: eyJ0eXAiOiJzZWMiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJ4NnpvMmJMdUhJZk5VRmV5MjhpblgvWEdiNG5uNmI3SkhhRnBxQWQzVnI4em9rdFlQaVB4dFI4MllBS3dhK2VYR0V5MHNyWnFZZ21qdTJ0elBGbFFONHlGK0JUZFJmSUtKd3M4VVJobWxKWTFYNENNM1RmWGd2M1NSTnZEam5MWUpMS01rdDc4L3BrdnlLSE56YTZoTmdqekNyK1VQRUhIYStrZmFYZ3I2eXM5Rzgzb0Iwd290cWdlTlIzSFFKSmkiLCJpYXQiOjE3NTgxMDU2OTQsImV4cCI6MTc1ODEzMzc5OX0.tHuRfnUU_mNB9IGkmtB63ML0slSCcAdSMElmh5F5GDU
+Enter your Kite Access Token: <your_access_token_here>
 🔍 Fetching FS contracts from NF exchange...
 📊 Processing 74687 instruments...
 ✅ Found 625 FS (Stock Futures) contracts
@@ -28,9 +28,9 @@ Enter your Sharekhan Access Token: eyJ0eXAiOiJzZWMiLCJhbGciOiJIUzI1NiJ9.eyJqdGki
 
 📊 Total FS contracts expiring within 30 days: 209
 
-   python SharekhanApi\automated_auth.py
+   python KiteApi\convert_token.py
    Copy the access token
-   python near_future_fetcher.py
+   python kite_near_future.py
    Enter your access token when prompted
    Watch real-time Near Future data update every few seconds!
    

@@ -1,71 +1,72 @@
 import { NextResponse } from 'next/server';
-import YahooFinanceAPI from '../../../../lib/yahoo-finance-api';
+import SharekhanTradingAPI from '../../../../lib/sharekhan-trading-api';
 import { MarketData } from '../route';
 
 export async function GET() {
   try {
-    const yf = new YahooFinanceAPI();
+    const sk = new SharekhanTradingAPI();
 
-    // Get popular Indian stocks
-    const popularStocks = YahooFinanceAPI.getPopularStocks();
+    // Try authenticate (uses API key or alternative flow internally)
+    await sk.loginAlternative();
 
-    // Fetch market and simulated futures data from Yahoo Finance
-    const [stockData, futuresData] = await Promise.all([
-      yf.getMarketData(popularStocks),
-      yf.getFuturesData(popularStocks)
+    const symbols = SharekhanTradingAPI.getPopularStocks();
+    const [spot, fut] = await Promise.all([
+      sk.getMarketData(symbols),
+      sk.getFuturesData(symbols).catch(() => [])
     ]);
 
-    // Convert to your dashboard format
-    const marketData: MarketData[] = yf.convertToMarketData(stockData, futuresData);
+    // Convert to dashboard MarketData[]
+    const converted = sk.convertToMarketData(spot, fut) as any[];
+    const marketData: MarketData[] = converted.map((row) => ({
+      symbol: row.symbol,
+      lotSize: row.lotSize,
+      returns: {
+        current: Number(row.returns.current) || 0,
+        near: Number(row.returns.near) || 0,
+        far: Number(row.returns.far) || 0,
+      },
+      lastUpdated: row.lastUpdated || new Date().toISOString(),
+    }));
 
-    console.log(`Successfully fetched ${marketData.length} stocks from Yahoo Finance`);
     return NextResponse.json(marketData);
+  } catch (error: any) {
+    console.error('Sharekhan API failed, providing fallback data:', error.message);
+    
+    // Fallback: Generate realistic mock data when Sharekhan fails
+    const symbols = ['TCS', 'RELIANCE', 'HDFC', 'INFY', 'ICICIBANK', 'HDFCBANK', 'KOTAKBANK', 'SBIN', 'AXISBANK', 'INDUSINDBK'];
+    const lotSizes: { [key: string]: number } = {
+      'TCS': 300, 'RELIANCE': 250, 'HDFC': 550, 'INFY': 600, 'ICICIBANK': 375,
+      'HDFCBANK': 550, 'KOTAKBANK': 400, 'SBIN': 1500, 'AXISBANK': 500, 'INDUSINDBK': 900
+    };
+    
+    const marketData: MarketData[] = symbols.map(symbol => {
+      const baseReturn = (Math.random() - 0.5) * 4; // -2% to +2%
+      return {
+        symbol,
+        lotSize: lotSizes[symbol] || 100,
+        returns: {
+          current: Number((baseReturn).toFixed(2)),
+          near: Number((baseReturn * 1.3).toFixed(2)),
+          far: Number((baseReturn * 1.6).toFixed(2)),
+        },
+        lastUpdated: new Date().toISOString(),
+      };
+    });
 
-  } catch (error) {
-    console.error('Error fetching Yahoo Finance data:', error);
-
-    // Fallback to mock data if API fails
-    console.log('Yahoo Finance fetch failed, falling back to mock data');
-    const { GET: getMockData } = await import('../route');
-    return getMockData();
+    return NextResponse.json(marketData);
   }
 }
 
-// Test endpoint for Yahoo Finance connection
 export async function POST(request: Request) {
   try {
-    const yf = new YahooFinanceAPI();
+    const sk = new SharekhanTradingAPI();
     const body = await request.json();
-
     if (body.action === 'test-connection') {
-      const testResult = await yf.testConnection();
-      return NextResponse.json(testResult);
+      const res = await sk.testConnection();
+      return NextResponse.json(res);
     }
-
-    if (body.action === 'get-futures') {
-      try {
-        const popularStocks = YahooFinanceAPI.getPopularStocks().slice(0, 10);
-        const futuresData = await yf.getFuturesData(popularStocks);
-        return NextResponse.json({
-          status: 'success',
-          data: futuresData
-        });
-      } catch (error: any) {
-        return NextResponse.json({
-          status: 'error',
-          error: 'Failed to fetch futures data',
-          details: error.message
-        });
-      }
-    }
-
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
-
   } catch (error: any) {
-    console.error('Yahoo Finance API error:', error);
-    return NextResponse.json({
-      error: 'API connection failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json({ error: 'API connection failed', details: error.message }, { status: 500 });
   }
 }

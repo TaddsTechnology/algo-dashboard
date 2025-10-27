@@ -1,6 +1,6 @@
 # 🌐 Near Future Website Setup Guide
 
-This guide will help you set up a web application that automatically manages Sharekhan API tokens and displays near future contracts like TradeTiger.
+This guide will help you set up a web application that automatically manages Kite API tokens and displays near future contracts like TradeTiger.
 
 ## 🚀 Quick Start
 
@@ -13,13 +13,11 @@ pip install -r requirements.txt
 Make sure your `config.py` has all required credentials:
 ```python
 # config.py
-API_KEY = "your_sharekhan_api_key"
-SECRET_KEY = "your_sharekhan_secret_key" 
-USERNAME = "your_sharekhan_username"
-PASSWORD = "your_sharekhan_password"
-TOTP_SECRET = "your_totp_secret_key"  # From your authenticator app
-VENDOR_KEY = "your_vendor_key"  # Optional
-VERSION_ID = "1005"  # Optional
+API_KEY = "your_kite_api_key"
+API_SECRET = "your_kite_secret_key" 
+USER_ID = "your_zerodha_user_id"
+PASSWORD = "your_zerodha_password"
+PIN = "your_totp_pin"  # From your authenticator app
 ```
 
 ### 3. Start the Website
@@ -65,7 +63,7 @@ Go to: **http://localhost:5000**
 ```
 ├── website_app.py          # Main Flask application
 ├── token_manager.py        # Automatic token management
-├── near_future_fetcher.py  # Core Near Future logic
+├── kite_near_future.py    # Core Near Future logic
 ├── config.py              # Your credentials
 ├── token_config.json      # Auto-generated token storage
 └── requirements.txt       # Dependencies
@@ -135,7 +133,7 @@ for contract in contracts[:500]:  # Show 500 instead of 240
 - Consider using environment variables for production
 
 ### **Token Lifetime:**
-- Sharekhan tokens typically expire after a few hours
+- Kite tokens typically expire after a few hours
 - The system automatically refreshes tokens before expiry
 - If automatic refresh fails, manual login may be required
 
