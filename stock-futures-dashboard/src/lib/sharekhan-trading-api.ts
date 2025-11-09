@@ -1,11 +1,12 @@
 import crypto from 'crypto';
-import axios from 'axios';
-import { getCookie } from './sharekhan-oauth';
+import axios, { AxiosRequestHeaders } from 'axios';
+// Remove unused import
+// import { getCookie } from './sharekhan-oauth';
 
 export interface SharekhanStockData {
   symbol: string;
   token: string;
-  ltp: number;
+  ask: number;
   change: number;
   pChange: number;
   volume: number;
@@ -20,7 +21,7 @@ export interface SharekhanFuturesData {
   symbol: string;
   expiry: string;
   token: string;
-  ltp: number;
+  ask: number;
   change: number;
   pChange: number;
   volume: number;
@@ -65,8 +66,8 @@ class SharekhanTradingAPI {
   }
 
   // Generate request headers
-  private getHeaders(includeAuth = true): any {
-    const headers: any = {
+  private getHeaders(includeAuth = true): AxiosRequestHeaders {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'X-API-KEY': this.apiKey,
       'User-Agent': 'SharekhanAPI/1.0'
@@ -76,7 +77,7 @@ class SharekhanTradingAPI {
       headers['Authorization'] = `Bearer ${this.jwtToken}`;
     }
 
-    return headers;
+    return headers as AxiosRequestHeaders;
   }
 
   // Login to Sharekhan API
@@ -113,7 +114,7 @@ class SharekhanTradingAPI {
 
       throw new Error(response.data?.message || 'Login failed');
 
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Sharekhan login error:', error);
       throw error;
     }
@@ -126,7 +127,7 @@ class SharekhanTradingAPI {
       // Just set up headers and test with a simple API call
       this.jwtToken = this.apiKey; // Use API key as token
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('API key setup failed:', error);
       return false;
     }
@@ -168,15 +169,17 @@ class SharekhanTradingAPI {
             return response.data;
           } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
             return response.data.data;
+          } else if (response.data && response.data.payload && Array.isArray(response.data.payload)) {
+            return response.data.payload;
           }
-        } catch (error) {
+        } catch {
           continue;
         }
       }
 
       throw new Error('No market data found');
 
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to fetch market data:', error);
       throw error;
     }
@@ -215,20 +218,20 @@ class SharekhanTradingAPI {
           } else if (response.data && response.data.data) {
             return response.data.data;
           }
-        } catch (error) {
+        } catch {
           continue;
         }
       }
 
       return []; // Return empty array if no futures data
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to fetch futures data:', error);
       return [];
     }
   }
 
   // Convert Sharekhan data to dashboard format
-  convertToMarketData(stockData: SharekhanStockData[], futuresData?: SharekhanFuturesData[]): any[] {
+  convertToMarketData(stockData: SharekhanStockData[], futuresData?: SharekhanFuturesData[]): Array<{ symbol: string; lotSize: number; returns: { current: number; near: number; far: number }; lastUpdated: string; volume: number; lastPrice: number; open: number; high: number; low: number; close: number }> {
     return stockData.map(stock => {
       // Find corresponding futures data
       const nearFuture = futuresData?.find(f => 
@@ -253,7 +256,7 @@ class SharekhanTradingAPI {
         },
         lastUpdated: new Date().toISOString(),
         volume: stock.volume,
-        lastPrice: stock.ltp,
+        lastPrice: stock.ask,
         open: stock.open,
         high: stock.high,
         low: stock.low,
@@ -298,14 +301,14 @@ class SharekhanTradingAPI {
       // If that fails, try the full login flow
       await this.login();
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Alternative login failed:', error);
       return false;
     }
   }
 
   // Test API connection
-  async testConnection(): Promise<any> {
+  async testConnection(): Promise<unknown> {
     try {
       const loginResult = await this.loginAlternative();
       
@@ -326,19 +329,19 @@ class SharekhanTradingAPI {
           dataCount: marketData.length,
           sampleData: marketData.slice(0, 2)
         };
-      } catch (dataError) {
+      } catch (dataError: unknown) {
         return {
           status: 'partial',
           message: 'Authentication successful, but market data unavailable',
-          error: dataError.message
+          error: dataError instanceof Error ? dataError.message : 'Unknown error'
         };
       }
 
-    } catch (error) {
+    } catch (error: unknown) {
       return {
         status: 'error',
         message: 'Connection failed',
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }

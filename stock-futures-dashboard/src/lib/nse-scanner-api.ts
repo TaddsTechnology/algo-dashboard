@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export interface NSEStockData {
   symbol: string;
-  ltp: number; // Last Traded Price
+  ask: number; // Ask Price
   change: number;
   changePercent: number;
   volume: number;
@@ -44,12 +44,12 @@ class NSEScannerAPI {
   // Check if NSE Scanner is running
   async checkConnection(): Promise<boolean> {
     try {
-      const response = await axios.get(this.baseURL, { timeout: 3000 });
+      await axios.get(this.baseURL, { timeout: 3000 });
       this.isConnected = true;
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       this.isConnected = false;
-      console.error('NSE Scanner not running:', error.message);
+      console.error('NSE Scanner not running:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
@@ -97,7 +97,7 @@ class NSEScannerAPI {
             console.log('NSE Scanner authentication successful');
             return true;
           }
-        } catch (error) {
+        } catch {
           // Try next method
           continue;
         }
@@ -106,8 +106,8 @@ class NSEScannerAPI {
       // If no auth method worked, assume API key in headers works
       return true;
 
-    } catch (error) {
-      console.error('NSE Scanner authentication failed:', error.message);
+    } catch (error: unknown) {
+      console.error('NSE Scanner authentication failed:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
@@ -150,7 +150,7 @@ class NSEScannerAPI {
             // If it's an object, convert to array
             return Object.values(response.data);
           }
-        } catch (error) {
+        } catch {
           // Try next endpoint
           continue;
         }
@@ -158,8 +158,8 @@ class NSEScannerAPI {
 
       throw new Error('No market data endpoints found');
 
-    } catch (error) {
-      console.error('Failed to fetch NSE market data:', error.message);
+    } catch (error: unknown) {
+      console.error('Failed to fetch NSE market data:', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   }
@@ -188,26 +188,26 @@ class NSEScannerAPI {
           if (response.data && Array.isArray(response.data)) {
             return response.data;
           }
-        } catch (error) {
+        } catch {
           continue;
         }
       }
 
       throw new Error('No arbitrage data endpoints found');
 
-    } catch (error) {
-      console.error('Failed to fetch arbitrage data:', error.message);
+    } catch (error: unknown) {
+      console.error('Failed to fetch arbitrage data:', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   }
 
   // Convert NSE Scanner data to dashboard format
-  convertToMarketData(nseData: NSEStockData[]): any[] {
+  convertToMarketData(nseData: NSEStockData[]): Array<{ symbol: string; lotSize: number; returns: { current: number; near: number; far: number }; lastUpdated: string; volume: number; lastPrice: number; open: number; high: number; low: number; close: number; arbitrageOpportunity?: boolean }> {
     return nseData.map(stock => {
       // Calculate returns based on price change
       const currentReturn = stock.changePercent || 0;
-      const nearReturn = stock.futuresPrice && stock.ltp ? 
-        ((stock.futuresPrice - stock.ltp) / stock.ltp * 100) : 
+      const nearReturn = stock.futuresPrice && stock.ask ? 
+        ((stock.futuresPrice - stock.ask) / stock.ask * 100) : 
         currentReturn * 1.2;
       const farReturn = nearReturn * 1.3;
 
@@ -221,7 +221,7 @@ class NSEScannerAPI {
         },
         lastUpdated: new Date().toISOString(),
         volume: stock.volume || 0,
-        lastPrice: stock.ltp,
+        lastPrice: stock.ask,
         open: stock.open,
         high: stock.high,
         low: stock.low,
@@ -256,7 +256,7 @@ class NSEScannerAPI {
   }
 
   // Test connection and get sample data
-  async testAPI(): Promise<any> {
+  async testAPI(): Promise<unknown> {
     try {
       const isConnected = await this.checkConnection();
       if (!isConnected) {
@@ -273,10 +273,10 @@ class NSEScannerAPI {
         sampleData: marketData.slice(0, 3)
       };
 
-    } catch (error) {
+    } catch (error: unknown) {
       return {
         status: 'error',
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }

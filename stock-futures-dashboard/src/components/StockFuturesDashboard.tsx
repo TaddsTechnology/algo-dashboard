@@ -354,7 +354,7 @@ export default function StockFuturesDashboard() {
       const getBaseSymbol = (symbol: string) => symbol.replace(/\d{2}[A-Z]{3}FUT$/, '').replace('FUT', '');
       const liveDataMap: Record<string, LiveItem> = {};
       
-      Object.values(liveDataResult.data as Record<string, unknown>).forEach((raw) => {
+      Object.values(liveDataResult.data as Record<string, unknown>).forEach((raw: unknown) => {
         const item = raw as LiveItem;
         const baseSymbol = getBaseSymbol(item.symbol);
         liveDataMap[baseSymbol] = item;
@@ -365,7 +365,7 @@ export default function StockFuturesDashboard() {
 
       // Match selected futures with live data and calculate differences
       const results = Object.values(selectedResult.data as Record<string, unknown>)
-        .map((raw) => {
+        .map((raw: unknown) => {
           const item = raw as LiveItem & { contract_info?: { lot_size?: number } };
           const baseSymbol = getBaseSymbol(item.symbol);
           const liveSpotItem = liveDataMap[baseSymbol];
@@ -715,7 +715,7 @@ export default function StockFuturesDashboard() {
           const dataObj = (bucket as { data: Record<string, unknown> }).data;
           const items = Object.values(dataObj) as unknown[];
           console.log(`Ingesting ${items.length} items, first symbol:`, (items[0] as { symbol?: string } | undefined)?.symbol);
-          items.forEach((raw) => {
+          items.forEach((raw: unknown) => {
             const item = raw as LiveItem;
             const baseSymbol = getBaseSymbol(item.symbol);
             if (!priceMap[baseSymbol]) priceMap[baseSymbol] = {};
@@ -769,7 +769,7 @@ export default function StockFuturesDashboard() {
         // Create contract-specific entries instead of base symbol entries
         const extended: ExtendedRow[] = [];
         
-        Object.values(priceMap).forEach((prices) => {
+        Object.values(priceMap).forEach((prices: PriceEntry) => {
           const spotPrice = prices.spot || 0;
           const lotSize = prices.lotSize || 100;
           
@@ -877,14 +877,14 @@ export default function StockFuturesDashboard() {
         } else {
           console.warn('⚠️ No extended data created from SSE');
         }
-      } catch (error) {
-        console.error('❌ SSE parsing error:', error);
+      } catch (err) {
+        console.error('❌ SSE parsing error:', err);
       }
     };
 
     source.addEventListener('message', handleMessage);
-    source.addEventListener('error', (err) => {
-      console.error('❌ SSE connection error:', err);
+    source.addEventListener('error', () => {
+      console.error('❌ SSE connection error');
       // keep connection; EventSource auto-reconnects
     });
 
