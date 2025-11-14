@@ -593,7 +593,7 @@ export default function StockFuturesDashboard() {
     
     const profitThreshold = thresholdMap[selectedExpiry];
     
-    // Filter stocks based on threshold
+    // Filter stocks based on the threshold for selected expiry
     const qualifyingStocks = processedRows
       .filter(row => row.profit >= profitThreshold)
       .map(row => ({ symbol: row.symbol, profit: row.profit, futureReturn: row.futureReturn, category: row.category }))
