@@ -325,6 +325,8 @@ export default function StockFuturesDashboard() {
   // Fetch both current month and selected futures expiry data
   const { data: marketData = [], isLoading, error, isFetching } = useQuery<ExtendedMarketData[], Error>({
     queryKey: ['market-data', selectedExpiry],
+    // Disable this query since SSE provides real-time data
+    enabled: liveData.length === 0, // Only fetch if SSE hasn't connected yet
     queryFn: async (): Promise<ExtendedMarketData[]> => {
       try {
         // Always fetch LIVE DATA as baseline (common for all comparisons)
