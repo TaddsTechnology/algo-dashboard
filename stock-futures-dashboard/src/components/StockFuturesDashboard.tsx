@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Search, TrendingUp } from 'lucide-react';
 import { setCachedData } from './QueryProvider';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ExpiryType = 'current' | 'near' | 'far';
 
@@ -275,16 +276,21 @@ const LOT_SIZE_MAP: Record<string, number> = {
   'ZYDUSLIFE': 900,
 };
 
-// Helper function to categorize expiry type from symbol
+// NOTE: Earlier versions attempted to infer expiry (current/near/far)
+// by parsing the month from the symbol (NOV/DEC/JAN, etc.).
+// That breaks every time the contract cycle rolls over.
+//
+// We now rely ONLY on the bucket the data comes from
+// (current/near/next/far in the HF `/api/all-futures-combined` response)
+// instead of trying to decode month text from the symbol.
 function getExpiryCategory(symbol: string): 'current' | 'near' | 'far' | 'unknown' {
-  // Extract month and determine expiry category
-  // Current/Near-term: November contracts
-  if (symbol.includes('NOV')) return 'current';
-  // Near/Next: December contracts
-  if (symbol.includes('DEC')) return 'near';
-  // Far: January contracts
-  if (symbol.includes('JAN')) return 'far';
-  
+  // Keep this helper only for debugging/logging; it is NOT used
+  // for core logic anymore.
+  if (symbol.includes('FUT')) {
+    if (symbol.includes('DEC')) return 'current';
+    if (symbol.includes('JAN')) return 'near';
+    if (symbol.includes('FEB')) return 'far';
+  }
   return 'unknown';
 }
 
@@ -315,7 +321,18 @@ export default function StockFuturesDashboard() {
   const [sortBy, setSortBy] = useState<'profit' | 'change' | 'symbol'>('profit');
   const [currentTime, setCurrentTime] = useState<string>('');
   const { toast } = useToast();
+  const { profile, signOut } = useAuth();
   const lastQualifyingSymbolsRef = useRef<string[]>([]);
+
+  // Calculate remaining trial days
+  const getRemainingDays = () => {
+    if (!profile) return 0;
+    const trialEnd = new Date(profile.trial_end_date);
+    const now = new Date();
+    const diffTime = trialEnd.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  };
 
   // Live data from SSE stream
   type ExtendedRow = TableRow; // alias for clarity
@@ -330,7 +347,7 @@ export default function StockFuturesDashboard() {
     queryFn: async (): Promise<ExtendedMarketData[]> => {
       try {
         // Always fetch LIVE DATA as baseline (common for all comparisons)
-        const liveDataResponse = await fetch('https://taddsteam-algo.hf.space/api/live-data', {
+        const liveDataResponse = await fetch('https://taddsTeam-algo.hf.space/api/live-data', {
           cache: 'no-store',
           headers: { 'Accept': 'application/json' }
         });
@@ -340,9 +357,9 @@ export default function StockFuturesDashboard() {
         
         // Fetch selected futures expiry data
         const endpointMap = {
-          current: 'https://taddsteam-algo.hf.space/api/near-futures',   // Near button → near-futures
-          near: 'https://taddsteam-algo.hf.space/api/next-futures',      // Next button → next-futures
-          far: 'https://taddsteam-algo.hf.space/api/far-futures',        // Far button → far-futures
+          current: 'https://taddsTeam-algo.hf.space/api/near-futures',   // Near button → near-futures
+          near: 'https://taddsTeam-algo.hf.space/api/next-futures',      // Next button → next-futures
+          far: 'https://taddsTeam-algo.hf.space/api/far-futures',        // Far button → far-futures
         };
         
         const selectedEndpoint = endpointMap[selectedExpiry];
@@ -678,21 +695,40 @@ export default function StockFuturesDashboard() {
     }
   }, [marketData]);
 
-  // SSE stream for real-time updates
+  // Ultra-fast 500ms polling for real-time updates (Vercel-compatible)
   useEffect(() => {
-    console.log('🔌 Initializing SSE connection...');
-    const source = new EventSource('https://taddsteam-algo.hf.space/api/stream');
+    console.log('⚡ Initializing ultra-fast polling (500ms intervals)...');
+    let isMounted = true;
+    let pollCount = 0;
 
-    source.addEventListener('open', () => {
-      console.log('✅ SSE connection established');
-    });
-
-    const handleMessage = (e: MessageEvent) => {
-      const timestamp = new Date().toLocaleTimeString();
-      console.log(`📨 SSE message received at ${timestamp}`);
+    const fetchAndProcessData = async () => {
+      if (!isMounted) return;
+      
       try {
-        const payload = JSON.parse(typeof e.data === 'string' ? e.data : '{}');
-        console.log('Raw SSE payload keys:', Object.keys(payload));
+        const response = await fetch('https://taddsTeam-algo.hf.space/api/all-futures-combined', {
+          cache: 'no-store',
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (!response.ok) {
+          console.error('Failed to fetch data:', response.status);
+          return;
+        }
+
+        const result = await response.json();
+        
+        if (!result.success || !result.data) {
+          console.warn('No data in response');
+          return;
+        }
+
+        pollCount++;
+        if (pollCount % 10 === 0) {
+          console.log(`⚡ Poll #${pollCount} - Data age: ${result.data_age_seconds?.toFixed(2)}s`);
+        }
+
+        const payload = result.data;
+        // Process the data exactly like SSE did
         // Normalize shape: { data: { current, near, far } } or { current, near, far }
         const root = payload?.data && (payload.data.current || payload.data.near || payload.data.far)
           ? payload.data
@@ -706,10 +742,10 @@ export default function StockFuturesDashboard() {
         if (!currentData && !nearData && !nextData && !farData) return; // Unknown shape
 
         type PriceEntry = {
-          spot?: number;           // Spot price (from 'current' bucket without FUT)
-          nearFut?: number;        // NOV futures
-          nextFut?: number;        // DEC futures  
-          farFut?: number;         // JAN futures
+          spot?: number;           // Spot price (from 'current' bucket)
+          nearFut?: number;        // Near-month futures (HF "near" bucket)
+          nextFut?: number;        // Next-month futures (HF "next" bucket)
+          farFut?: number;         // Far-month futures (HF "far" bucket)
           lotSize?: number;
           nearFutSymbol?: string;
           nextFutSymbol?: string;
@@ -722,40 +758,37 @@ export default function StockFuturesDashboard() {
 
         const getBaseSymbol = (symbol: string) => symbol.replace(/\d{2}[A-Z]{3}FUT$/, '');
 
-        const ingest = (bucket?: unknown) => {
+        type BucketType = 'spot' | 'near' | 'next' | 'far';
+
+        const ingest = (bucket: unknown | undefined, bucketType: BucketType) => {
           if (!bucket || typeof bucket !== 'object' || !('data' in bucket)) return;
           const dataObj = (bucket as { data: Record<string, unknown> }).data;
           const items = Object.values(dataObj) as unknown[];
-          console.log(`Ingesting ${items.length} items, first symbol:`, (items[0] as { symbol?: string } | undefined)?.symbol);
+          console.log(`Ingesting [${bucketType}] ${items.length} items, first symbol:`, (items[0] as { symbol?: string } | undefined)?.symbol);
           items.forEach((raw: unknown) => {
             const item = raw as LiveItem;
             const baseSymbol = getBaseSymbol(item.symbol);
             if (!priceMap[baseSymbol]) priceMap[baseSymbol] = {};
-            const expCat = getExpiryCategory(item.symbol);
-            if (priceMap[baseSymbol] && Object.keys(priceMap).length < 3) {
-              console.log(`Symbol: ${item.symbol}, expiry category: ${expCat}`);
-            }
-            // Map SSE data: spot prices vs futures
-            if (expCat === 'unknown') {
-              // Spot price (no FUT suffix)
+
+            // Map data purely based on which bucket we are ingesting,
+            // not by parsing the month text from the symbol.
+            if (bucketType === 'spot') {
               const spotPrice = item.ask || item.ltp;
               priceMap[baseSymbol].spot = spotPrice;
-              if (Object.keys(priceMap).length < 3) {
-                console.log(`Stored spot for ${baseSymbol}: ${spotPrice}`);
-              }
-            } else if (expCat === 'current') {
-              // NOV futures → 'current' category (Near button)
-              priceMap[baseSymbol].nearFut = item.ask;
+            } else if (bucketType === 'near') {
+              const futPrice = item.ask || item.ltp;
+              priceMap[baseSymbol].nearFut = futPrice;
               priceMap[baseSymbol].nearFutSymbol = item.symbol;
-            } else if (expCat === 'near') {
-              // DEC futures → 'near' category (Next button)
-              priceMap[baseSymbol].nextFut = item.ask;
+            } else if (bucketType === 'next') {
+              const futPrice = item.ask || item.ltp;
+              priceMap[baseSymbol].nextFut = futPrice;
               priceMap[baseSymbol].nextFutSymbol = item.symbol;
-            } else if (expCat === 'far') {
-              // JAN futures → 'far' category (Far button)
-              priceMap[baseSymbol].farFut = item.ask;
+            } else if (bucketType === 'far') {
+              const futPrice = item.ask || item.ltp;
+              priceMap[baseSymbol].farFut = futPrice;
               priceMap[baseSymbol].farFutSymbol = item.symbol;
             }
+
             const lot = item.contract_info?.lot_size || getLotSize(item.symbol);
             priceMap[baseSymbol].lotSize = priceMap[baseSymbol].lotSize || lot;
             priceMap[baseSymbol].dailyChange = item.change || priceMap[baseSymbol].dailyChange || 0;
@@ -764,10 +797,10 @@ export default function StockFuturesDashboard() {
           });
         };
 
-        ingest(currentData);
-        ingest(nearData);
-        ingest(nextData);
-        ingest(farData);
+        if (currentData) ingest(currentData, 'spot');
+        if (nearData) ingest(nearData, 'near');
+        if (nextData) ingest(nextData, 'next');
+        if (farData) ingest(farData, 'far');
 
         console.log(`PriceMap entries: ${Object.keys(priceMap).length}`);
         if (Object.keys(priceMap).length > 0) {
@@ -867,42 +900,35 @@ export default function StockFuturesDashboard() {
         });
 
         if (extended.length) {
-          console.log(`📡 SSE Update: ${extended.length} contracts received`);
-          console.log(`Sample SSE contracts:`, extended.slice(0, 3).map(c => ({
-            symbol: c.symbol,
-            category: c.category,
-            profit: c.returns.current
-          })));
           const map = liveMapRef.current;
           for (const row of extended) {
             const sym = row.symbol;
             map[sym] = { ...(map[sym] || {}), ...row };
           }
           const merged = Object.values(map);
-          console.log(`📊 SSE merged data: ${merged.length} total contracts`);
-          const currentCount = (merged as ExtendedRow[]).filter((m) => m.category === 'current').length;
-          const nearCount = (merged as ExtendedRow[]).filter((m) => m.category === 'near').length;
-          const farCount = (merged as ExtendedRow[]).filter((m) => m.category === 'far').length;
-          console.log(`Categories: ${currentCount} current (Near button), ${nearCount} near (Next button), ${farCount} far (Far button)`);
+          
+          if (pollCount === 1 || pollCount % 20 === 0) {
+            console.log(`📡 Poll Update: ${extended.length} contracts, ${merged.length} total`);
+          }
+          
           setLiveData(merged as ExtendedRow[]);
           setCachedData(merged);
-        } else {
-          console.warn('⚠️ No extended data created from SSE');
         }
       } catch (err) {
-        console.error('❌ SSE parsing error:', err);
+        console.error('❌ Polling error:', err);
       }
     };
 
-    source.addEventListener('message', handleMessage);
-    source.addEventListener('error', () => {
-      console.error('❌ SSE connection error');
-      // keep connection; EventSource auto-reconnects
-    });
+    // Initial fetch
+    fetchAndProcessData();
+
+    // Start ultra-fast polling every 500ms
+    const intervalId = setInterval(fetchAndProcessData, 500);
 
     return () => {
-      source.removeEventListener('message', handleMessage);
-      try { source.close(); } catch {}
+      isMounted = false;
+      clearInterval(intervalId);
+      console.log(`🛁 Stopped polling after ${pollCount} requests`);
     };
   }, []);
 
@@ -915,13 +941,34 @@ export default function StockFuturesDashboard() {
     return (
       <div className="p-6 text-center">
         <div className="text-red-600">Error loading market data: {error.message}</div>
-        <div className="text-sm text-gray-500 mt-2">Trying to connect to algo backend at https://taddsteam-algo.hf.space</div>
+        <div className="text-sm text-gray-500 mt-2">Trying to connect to algo backend at https://taddsTeam-algo.hf.space</div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Trial Info Banner */}
+      {profile && (
+        <div className={`${
+          getRemainingDays() <= 2 ? 'bg-red-600' : 'bg-blue-600'
+        } text-white px-6 py-2 text-center border-b`}>
+          <p className="text-sm font-medium">
+            {getRemainingDays() > 0 ? (
+              <>
+                🎉 Free Trial: {getRemainingDays()} day{getRemainingDays() !== 1 ? 's' : ''} remaining
+              </>
+            ) : (
+              <>⚠️ Your trial has expired</>  
+            )}
+            {' • '}
+            <button className="underline ml-1 hover:text-blue-100" onClick={signOut}>
+              Sign Out
+            </button>
+          </p>
+        </div>
+      )}
+      
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
