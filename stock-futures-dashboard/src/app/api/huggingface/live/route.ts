@@ -63,7 +63,15 @@ export async function GET() {
     });
 
     if (!hfResponse.ok) {
-      throw new Error(`Hugging Face API error: ${hfResponse.status}`);
+      console.error(`Hugging Face API error: ${hfResponse.status}`);
+      // Gracefully return an error response instead of throwing so builds don't fail
+      return NextResponse.json(
+        {
+          error: 'Failed to fetch data from Hugging Face API',
+          status: hfResponse.status,
+        },
+        { status: 503 }
+      );
     }
 
     const hfData = await hfResponse.json();
