@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User } from '@supabase/supabase-js'
+import { AuthApiError, User } from '@supabase/supabase-js'
 import { supabase, UserProfile } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
@@ -9,8 +9,8 @@ interface AuthContextType {
   user: User | null
   profile: UserProfile | null
   loading: boolean
-  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>
-  signIn: (email: string, password: string) => Promise<{ error: any }>
+  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: AuthApiError | null }>
+  signIn: (email: string, password: string) => Promise<{ error: AuthApiError | null }>
   signOut: () => Promise<void>
   isTrialExpired: boolean
 }
@@ -91,14 +91,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
+  const signUp: AuthContextType['signUp'] = async (
+    email: string,
+    password: string,
+    fullName?: string,
+  ) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
       })
 
-      if (error) return { error }
+      if (error) return { error: error as AuthApiError }
 
       // If user is created, update profile with full name
       if (data.user && fullName) {
@@ -109,21 +113,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       return { error: null }
-    } catch (error) {
-      return { error }
+    } catch (error: unknown) {
+      console.error('Error during sign up:', error)
+      return { error: error as AuthApiError }
     }
   }
 
-  const signIn = async (email: string, password: string) => {
+  const signIn: AuthContextType['signIn'] = async (email: string, password: string) => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      return { error }
-    } catch (error) {
-      return { error }
+      return { error: error as AuthApiError | null }
+    } catch (error: unknown) {
+      console.error('Error during sign in:', error)
+      return { error: error as AuthApiError }
     }
   }
 

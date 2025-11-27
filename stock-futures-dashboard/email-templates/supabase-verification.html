@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Verify Your Email - Futures Watch</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f3f4f6; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <!-- Main Container -->
+                <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header with Logo -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 40px 30px; text-align: center; border-radius: 12px 12px 0 0;">
+                            <!-- Logo - Replace this URL after deploying -->
+                            <div style="background: white; display: inline-block; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                                <span style="font-size: 32px; font-weight: bold; color: #2563eb;">TADDS</span>
+                            </div>
+                            <h1 style="color: #ffffff; font-size: 28px; margin: 0; font-weight: 700;">Futures Watch</h1>
+                            <p style="color: #dbeafe; margin: 10px 0 0 0; font-size: 16px;">Smart Algo Trading Platform</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <h2 style="color: #111827; font-size: 24px; margin: 0 0 20px 0; font-weight: 600;">Verify Your Email Address</h2>
+                            
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                                Welcome to <strong>Futures Watch</strong>! We're excited to have you on board. To get started with your 7-day free trial, please verify your email address by clicking the button below.
+                            </p>
+                            
+                            <!-- CTA Button -->
+                            <table role="presentation" style="margin: 30px 0; width: 100%;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ .ConfirmationURL }}" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+                                            Verify Email Address
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
+                                If the button doesn't work, copy and paste this link into your browser:
+                            </p>
+                            <p style="color: #2563eb; font-size: 13px; word-break: break-all; margin: 10px 0 0 0; background: #eff6ff; padding: 12px; border-radius: 6px;">
+                                {{ .ConfirmationURL }}
+                            </p>
+                            
+                            <!-- Features Info -->
+                            <table role="presentation" style="width: 100%; margin-top: 30px; background-color: #eff6ff; border-left: 4px solid #2563eb; border-radius: 4px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="color: #1e40af; font-size: 14px; font-weight: 600; margin: 0 0 10px 0;">🎉 Your 7-Day Free Trial Includes:</p>
+                                        <table role="presentation" style="width: 100%;">
+                                            <tr><td style="color: #1e40af; font-size: 14px; padding: 4px 0;">• Real-time NSE F&amp;O market data</td></tr>
+                                            <tr><td style="color: #1e40af; font-size: 14px; padding: 4px 0;">• Live arbitrage opportunities</td></tr>
+                                            <tr><td style="color: #1e40af; font-size: 14px; padding: 4px 0;">• Multiple expiry tracking (Near/Next/Far)</td></tr>
+                                            <tr><td style="color: #1e40af; font-size: 14px; padding: 4px 0;">• Smart profit alerts</td></tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-radius: 0 0 12px 12px; border-top: 1px solid #e5e7eb;">
+                            <p style="color: #6b7280; font-size: 14px; margin: 0 0 10px 0;">
+                                <strong>Tadds Technology</strong>
+                            </p>
+                            <p style="color: #9ca3af; font-size: 12px; margin: 0 0 15px 0;">
+                                Smart Trading Solutions for Modern Investors
+                            </p>
+                            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                                Questions? Contact us at <a href="mailto:info@taddstechnology.com" style="color: #2563eb; text-decoration: none;">info@taddstechnology.com</a>
+                            </p>
+                            <p style="color: #d1d5db; font-size: 11px; margin: 20px 0 0 0;">
+                                This email was sent to {{ .Email }}. If you didn't create an account, you can safely ignore this email.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

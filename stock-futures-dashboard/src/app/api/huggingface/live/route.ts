@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 // Hugging Face Space URL - Updated to your new space
-const HUGGING_FACE_API_URL = 'https://taddsteam-market-data-api.hf.space';
+const HUGGING_FACE_API_URL = 'https://taddsTeam-algo.hf.space';
 
 interface MarketData {
   symbol: string;

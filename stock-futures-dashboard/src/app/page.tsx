@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 
 export default function Home() {
-  const { user, profile, loading, signOut, isTrialExpired } = useAuth()
+  const { user, loading, signOut, isTrialExpired } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -53,14 +53,6 @@ export default function Home() {
     )
   }
 
-  const getRemainingDays = () => {
-    if (!profile) return 0
-    const trialEnd = new Date(profile.trial_end_date)
-    const now = new Date()
-    const diffTime = trialEnd.getTime() - now.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return Math.max(0, diffDays)
-  }
 
   return (
     <div>

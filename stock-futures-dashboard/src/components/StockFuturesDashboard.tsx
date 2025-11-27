@@ -283,16 +283,6 @@ const LOT_SIZE_MAP: Record<string, number> = {
 // We now rely ONLY on the bucket the data comes from
 // (current/near/next/far in the HF `/api/all-futures-combined` response)
 // instead of trying to decode month text from the symbol.
-function getExpiryCategory(symbol: string): 'current' | 'near' | 'far' | 'unknown' {
-  // Keep this helper only for debugging/logging; it is NOT used
-  // for core logic anymore.
-  if (symbol.includes('FUT')) {
-    if (symbol.includes('DEC')) return 'current';
-    if (symbol.includes('JAN')) return 'near';
-    if (symbol.includes('FEB')) return 'far';
-  }
-  return 'unknown';
-}
 
 // Helper function to get lot size from symbol
 function getLotSize(symbol: string): number {
