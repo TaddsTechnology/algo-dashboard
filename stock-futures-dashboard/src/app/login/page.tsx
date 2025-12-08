@@ -38,6 +38,7 @@ export default function LoginPage() {
       setLoading(false)
     } else {
       toast.success('Login successful!')
+      // Session will be maintained for 6 hours
       router.push('/')
     }
   }
@@ -139,11 +140,11 @@ export default function LoginPage() {
             </ul>
           </div>
 
-          {/* Trial Badge */}
+          {/* Session Info */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg p-4 shadow-lg">
-            <p className="font-bold text-lg">🎁 7-Day Free Trial</p>
+            <p className="font-bold text-lg">🔒 Secure Session Management</p>
             <p className="text-sm text-blue-100 mt-1">
-              Full access to all features • No credit card required
+              Your session is automatically maintained for 6 hours. No need to re-login frequently!
             </p>
           </div>
         </div>
